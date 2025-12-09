@@ -1,4 +1,9 @@
 build/
-.vscode
-.cache
 
+.vscode/
+.cache/
+
+.clangd
+
+*.dot
+*.svg
