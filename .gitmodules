@@ -1,3 +1,6 @@
 [submodule "CXXGraph"]
 	path = CXXGraph
 	url = https://github.com/ZigRazor/CXXGraph.git
+[submodule "cxxopts"]
+	path = cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
