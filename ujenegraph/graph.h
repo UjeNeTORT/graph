@@ -1,19 +1,17 @@
 #pragma once
 
-#include <cstdint>
 #include <iostream>
 #include <ostream>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
+
+#include "node.h"
 
 namespace UjeNeGraph {
 
-using NodeT = uint32_t;
-
 class Graph final {
   // adjacency lists
-  using AdjList_t = std::unordered_map<NodeT, std::vector<NodeT>>;
+  using AdjList_t = std::unordered_map<Node, std::vector<Node>>;
   AdjList_t Successors_;
   std::string Name_;
 public:
@@ -23,17 +21,19 @@ public:
   const std::string &getName() const;
   // @returns 'true' if the node was actually inserted
   //          'false' if it already existed
-  bool addNode(NodeT N);
+  bool addNode(Node N);
 
   // @returns 'true' if the edge was actually inserted
   //          'false' if it already existed
-  bool addEdge(const NodeT &From, const NodeT &To);
+  bool addEdge(const Node &From, const Node &To);
 
-  bool exists(const NodeT &N) const;
-  bool connected(const NodeT &N1, const NodeT &N2);
+  bool exists(const Node &N) const;
+  bool connected(const Node &N1, const Node &N2);
 
   void print(std::ostream &OS) const;
 };
+
+void input(std::istream &IS, Graph &G);
 
 void printCli(std::ostream &OS, const Graph &G);
 void printDot(std::ostream &OS, const Graph &G);
