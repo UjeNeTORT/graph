@@ -54,9 +54,9 @@ bool Graph::addStartEnd() {
 
   if (is_empty) addEdge(StartNew, EndNew);
 
-  Start = std::make_unique<Node>(Successors_.find(StartNew)->first);
+  Start_ = std::make_unique<Node>(Successors_.find(StartNew)->first);
   if (HasEnd)
-    End = std::make_unique<Node>(Successors_.find(EndNew)->first);
+    End_ = std::make_unique<Node>(Successors_.find(EndNew)->first);
 
   return true;
 }
@@ -81,8 +81,8 @@ const std::string &Graph::getName() const {
   return Name_;
 }
 
-bool Graph::hasStart() const { return Start != nullptr; }
-bool Graph::hasEnd() const { return End != nullptr; }
+bool Graph::hasStart() const { return Start_ != nullptr; }
+bool Graph::hasEnd() const { return End_ != nullptr; }
 
 bool Graph::addNode(Node N) {
   if (exists(N)) return false;
@@ -126,7 +126,7 @@ bool Graph::addEdge(const Node &From, const Node &To) {
 bool Graph::acyclic() {
   // assert(Start != nullptr && "Graph must have a node marked as START");
   // assert(End != nullptr && "Graph must have a node marked as END");
-  if (Start == nullptr || End == nullptr) return false;
+  if (Start_ == nullptr || End_ == nullptr) return false;
 
   // only start and end nodes
   if (Successors_.size() == 2) return true;
@@ -143,7 +143,7 @@ bool Graph::acyclic() {
   for (auto It = Nodes.begin(); It != Nodes.end(); ++It)
     Colors[**It] = WHITE;
 
-  Visiting.push_back(*Start.get());
+  Visiting.push_back(*Start_.get());
   while (!Visiting.empty()) {
     Node Curr = Visiting.back();
 
@@ -231,8 +231,9 @@ void Graph::print(std::ostream &OS) const {
   }
 }
 
-std::optional<Graph> Graph::getDom() {
-  if (!hasStart()) return std::nullopt;
+std::optional<Graph> Graph::getDom(Node *Start) {
+  if (Start == nullptr) Start = Start_.get();
+  if (Start == nullptr) return std::nullopt;
 
   std::vector<Node> Nodes;
   for (const auto &[N, Ch] : Successors_)

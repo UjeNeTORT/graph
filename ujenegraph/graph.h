@@ -17,8 +17,8 @@ class Graph final {
   using AdjList_t = std::unordered_map<Node, std::vector<Node>>;
   AdjList_t Successors_;
   AdjList_t Predecessors_;
-  std::unique_ptr<Node> Start = nullptr;
-  std::unique_ptr<Node> End = nullptr;
+  std::unique_ptr<Node> Start_ = nullptr;
+  std::unique_ptr<Node> End_ = nullptr;
   std::string Name_;
 public:
   Graph(std::string Name = "UjeNeGraph") : Name_(Name) {}
@@ -45,7 +45,7 @@ public:
   // check if no cycles exist
   bool acyclic();
   std::vector<Node> traverseRPO();
-  std::optional<Graph> getDom();
+  std::optional<Graph> getDom(Node *Start = nullptr);
 
   bool exists(const Node &N) const;
   bool empty() const;

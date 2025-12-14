@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
   ujene::Graph G;
   std::cout << "Enter the graph: (to stop press Ctrl-D)\n";
   ujene::input(std::cin, G);
-  bool StartEndExist = G.addStartEnd();
-  bool IsAcyclic = StartEndExist && G.acyclic();
+  bool StartExists = G.addStartEnd();
+  bool IsAcyclic = StartExists && G.acyclic();
 
   if (Result.count("acyclic")) {
     std::cout << "Acyclic: " << IsAcyclic << "\n";
@@ -53,6 +53,13 @@ int main(int argc, char *argv[]) {
   }
 
   if (Result.count("dom")) {
+    ujene::Graph DomTree = G.getDom().value();
+    std::cerr << "Dominator tree:\n" << DomTree  << "\n";
+    std::ofstream OFDomGraph(DomFname);
+    ujene::printDot(OFDomGraph, DomTree);
+  }
+
+  if (Result.count("postdom")) {
     ujene::Graph DomTree = G.getDom().value();
     std::cerr << "Dominator tree:\n" << DomTree  << "\n";
     std::ofstream OFDomGraph(DomFname);
