@@ -156,6 +156,47 @@ bool Graph::acyclic() {
   return true;
 }
 
+std::vector<Node> Graph::traverseRPO() {
+  assert(acyclic() && "Graph must be acyclic");
+
+  std::vector<const Node *> Nodes;
+  for (const auto &[N, Ch] : Successors_)
+    Nodes.push_back(&N);
+
+
+  std::vector<Node> NNoParents;
+  for (auto [N, Pr] : Predecessors_)
+    if (Pr.empty()) NNoParents.push_back(N);
+
+  std::vector<Node> NodesSorted;
+  std::vector<std::pair<Node, Node>> RE; // removed edges
+
+  while (!NNoParents.empty()) {
+    Node N = NNoParents.back();
+    NNoParents.pop_back();
+    NodesSorted.push_back(N);
+    for (Node &M : Successors_[N]) {
+      // if edge E: N -> M removed - ignore it
+      std::pair<Node, Node> E(N, M);
+      if (std::find(RE.begin(), RE.end(), E) != RE.end()) continue;
+      RE.push_back(E);
+
+      // if M has no incoming edges, besides ignored, add to nodes without parents
+      bool MHasParents = false;
+      for (auto It = Predecessors_[M].begin(); It != Predecessors_[M].end(); ++It) {
+        std::pair<Node, Node> E(*It, M);
+        if (std::find(RE.begin(), RE.end(), E) == RE.end()) {
+          MHasParents = true;
+          break;
+        }
+      }
+      if (!MHasParents) NNoParents.push_back(M);
+    }
+  }
+
+  return NodesSorted;
+}
+
 bool Graph::exists(const Node &N) const {
   return Successors_.find(N) != Successors_.end();
 }

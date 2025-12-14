@@ -41,6 +41,7 @@ public:
 
   // check if no cycles exist
   bool acyclic();
+  std::vector<Node> traverseRPO();
 
   bool exists(const Node &N) const;
   bool empty() const;

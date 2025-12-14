@@ -7,7 +7,7 @@
 namespace ujene = UjeNeGraph;
 
 int main(int argc, char *argv[]) {
-  std::string RPOFname;
+  std::string DotFname;
   std::string DomFname;
   std::string PostDomFname;
   cxxopts::Options Options("graph", "Algorithms on graphs");
@@ -15,8 +15,9 @@ int main(int argc, char *argv[]) {
   Options.add_options()
   ("h,help", "print help message")
   ("acyclic", "print 1 if graph is acyclic, 0 otherwise")
-  ("rpo", "print rpo sorted graph",
-    cxxopts::value<std::string>(RPOFname)->default_value("rpo.dot"))
+  ("dot", "output graph in dot",
+    cxxopts::value<std::string>(DotFname)->default_value("graph.dot"))
+  ("rpo", "print rpo sorted graph")
   ("dom", "print dominator tree",
     cxxopts::value<std::string>(DomFname)->default_value("dom.dot"))
   ("postdom", "print post dominator tree",
@@ -33,14 +34,34 @@ int main(int argc, char *argv[]) {
   std::cout << "Enter the graph: (to stop press Ctrl-D)\n";
   ujene::input(std::cin, G);
   bool StartEndExist = G.addStartEnd();
+  bool IsAcyclic = StartEndExist && G.acyclic();
 
   if (Result.count("acyclic")) {
-    std::cout << "Acyclic: " << (StartEndExist && G.acyclic()) << "\n";
+    std::cout << "Acyclic: " << IsAcyclic << "\n";
+    return 0;
+  }
+  if (!IsAcyclic) {
+    std::cout << "Error: provided graph is not acyclic!\n";
+    return 1;
   }
 
-  std::cout << G;
-  std::ofstream OFs_dom_dot(DomFname);
-  ujene::printDot(OFs_dom_dot, G);
+  if (Result.count("rpo")) {
+    auto RPO = G.traverseRPO();
+    std::cout << "Reverse Post Order:\n";
+    for (auto It = RPO.begin(); It != RPO.end(); ++It) std::cout << *It << ' ';
+    std::cout << '\n';
+  }
+
+  if (Result.count("dom")) {
+    auto Dom = getDom(G);
+    std::cerr << "Dominator tree:\n" << Dom << "\n";
+  }
+
+  std::cerr << G;
+  if (Result.count("dot")) {
+    std::ofstream OFDotGraph(DotFname);
+    ujene::printDot(OFDotGraph, G);
+  }
 
   return 0;
 }
