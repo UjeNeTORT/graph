@@ -1,12 +1,14 @@
 #include "graph.h"
+#include "node.h"
 
+#include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <optional>
+#include <span>
 #include <sstream>
 
 namespace {
-  void printDotNode(std::ostream &OS,
-                    const UjeNeGraph::Node &N,
-                    const std::string &Attr = "");
   void printDotEdge(std::ostream &OS,
                     const UjeNeGraph::Node &From,
                     const UjeNeGraph::Node &To,
@@ -15,8 +17,44 @@ namespace {
 
 namespace UjeNeGraph {
 
+bool Graph::addStartEnd() {
+  std::vector<Node> NNoParents;
+  std::vector<Node> NNoChildren;
+
+  // remove former start, end nodes and error nodes
+  for (auto [N, Ch] : Successors_)
+    if (N.getTy() != NodeType::REGULAR) removeNode(N);
+
+  // find nodes w/o children and parents, ignoring Start and End
+  for (auto [N, Ch] : Successors_)
+    if (Ch.empty() || Ch[0] == N) NNoChildren.push_back(N);
+  for (auto [N, Pr] : Predecessors_)
+    if (Pr.empty() || Pr[0] == N) NNoParents.push_back(N);
+
+  Node Start(0, NodeType::START);
+  Node End(INT32_MAX, NodeType::END);
+  addNode(Start);
+  addNode(End);
+  for (auto NNop  : NNoParents)  addEdge(Start, NNop);
+  for (auto NNoch : NNoChildren) addEdge(NNoch, End);
+
+  return true;
+}
+
 const Graph::AdjList_t &Graph::getAdjList() const {
   return Successors_;
+}
+
+std::optional<std::span<const Node>> Graph::getChildren(const Node &N) const {
+  if (!exists(N)) return std::nullopt;
+  assert(Successors_.find(N) != Successors_.end() && "exists() returned true for non existent map object");
+  return std::span<const Node>(Successors_.at(N));
+}
+
+std::optional<std::span<const Node>> Graph::getParents(const Node &N) const {
+  if (!exists(N)) return std::nullopt;
+  assert(Predecessors_.find(N) != Predecessors_.end() && "exists() returned true for non existent map object");
+  return std::span<const Node>(Predecessors_.at(N));
 }
 
 const std::string &Graph::getName() const {
@@ -24,8 +62,33 @@ const std::string &Graph::getName() const {
 }
 
 bool Graph::addNode(Node N) {
-  if (Successors_.find(N) != Successors_.end()) return false;
+  if (exists(N)) return false;
   Successors_[N] = {};
+  Predecessors_[N] = {};
+  return true;
+}
+
+bool Graph::removeNode(Node N) {
+  if(!exists(N)) return false;
+
+  for (auto S : Successors_[N]) {
+    Predecessors_[S].erase(
+      std::find(
+        Predecessors_[S].begin(), Predecessors_[S].end(), N
+      )
+    );
+  }
+
+  for (auto P : Predecessors_[N]) {
+    Successors_[P].erase(
+      std::find(
+        Successors_[P].begin(), Successors_[P].end(), N
+      )
+    );
+  }
+
+  Successors_.erase(N);
+  Predecessors_.erase(N);
   return true;
 }
 
@@ -33,12 +96,15 @@ bool Graph::addEdge(const Node &From, const Node &To) {
   if (connected(From, To)) return false;
   addNode(To);
   Successors_[From].push_back(To);
+  Predecessors_[To].push_back(From);
   return true;
 }
 
 bool Graph::exists(const Node &N) const {
   return Successors_.find(N) != Successors_.end();
 }
+
+bool Graph::empty() const { return Successors_.empty(); }
 
 // @returns 'true' if there is a N1 -> N2 edge
 //          'false' otherwise
@@ -85,7 +151,9 @@ void printDot(std::ostream &OS, const Graph &G) {
   const auto &AdjList = G.getAdjList();
   OS << "digraph " << G.getName() << " {\n";
   for (const auto &L : AdjList)
-    printDotNode(OS, L.first);
+    printDotNode(OS, L.first, L.first.getTy() == NodeType::REGULAR
+                                 ? ""
+                                 : "style=\"filled\", fillcolor=\"grey\""); // todo fix styles
 
   for (const auto &L : AdjList)
     for (const Node &N : L.second)
@@ -102,11 +170,6 @@ std::ostream &operator<<(std::ostream &OS, const Graph &G) {
 } // namespace UjeNeGraph
 
 namespace {
-void printDotNode(std::ostream &OS,
-                  const UjeNeGraph::Node &N,
-                  const std::string &Attr) {
-  OS << '\t' << N << "[" << Attr << "];\n";
-}
 
 void printDotEdge(std::ostream &OS,
                   const UjeNeGraph::Node &From,

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 #include <ostream>
+#include <set>
+#include <span>
 #include <vector>
 #include <unordered_map>
 
@@ -13,25 +16,35 @@ class Graph final {
   // adjacency lists
   using AdjList_t = std::unordered_map<Node, std::vector<Node>>;
   AdjList_t Successors_;
+  AdjList_t Predecessors_;
   std::string Name_;
 public:
   Graph(std::string Name = "UjeNeGraph") : Name_(Name) {}
 
   const AdjList_t &getAdjList() const;
+  std::optional<std::span<const Node>> getChildren(const Node &N) const;
+  std::optional<std::span<const Node>> getParents(const Node &N) const;
+
   const std::string &getName() const;
+
   // @returns 'true' if the node was actually inserted
   //          'false' if it already existed
   bool addNode(Node N);
+  bool removeNode(Node N);
+  bool addStartEnd();
 
   // @returns 'true' if the edge was actually inserted
   //          'false' if it already existed
   bool addEdge(const Node &From, const Node &To);
 
   bool exists(const Node &N) const;
+  bool empty() const;
   bool connected(const Node &N1, const Node &N2);
 
   void print(std::ostream &OS) const;
 };
+
+// bool Acyclic(const Graph &G);
 
 void input(std::istream &IS, Graph &G);
 

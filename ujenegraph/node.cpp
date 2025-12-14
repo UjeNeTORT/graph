@@ -28,4 +28,13 @@ std::ostream &operator<<(std::ostream &OS, const Node &N) {
   return OS;
 }
 
+void printDotNode(std::ostream &OS,
+                  const Node &N,
+                  const std::string &Attr) {
+  OS << '\t' << N << "[";
+  if (N.getTy() != NodeType::REGULAR) OS << "style=filled, fillcolor=grey";
+  if (!Attr.empty()) OS << ", ";
+  OS << Attr << "];\n";
+}
+
 } // namespace UjeNeGraph
