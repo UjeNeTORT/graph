@@ -18,8 +18,8 @@ add_subdirectory(CXXGraph)
 add_subdirectory(cxxopts)
 add_subdirectory(ujenegraph)
 
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE ujenegraph CXXGraph)
-target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/ujenegraph
-                                        ${CMAKE_SOURCE_DIR}/cxxopts/include
-                                        ${CMAKE_SOURCE_DIR}/CXXGraph/include)
+add_executable(graph main.cpp)
+target_link_libraries(graph PRIVATE ujenegraph CXXGraph)
+target_include_directories(graph PRIVATE ${CMAKE_SOURCE_DIR}/ujenegraph
+                                         ${CMAKE_SOURCE_DIR}/cxxopts/include
+                                         ${CMAKE_SOURCE_DIR}/CXXGraph/include)
