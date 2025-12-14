@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -31,12 +32,15 @@ bool Graph::addStartEnd() {
   for (auto [N, Pr] : Predecessors_)
     if (Pr.empty() || Pr[0] == N) NNoParents.push_back(N);
 
-  Node Start(0, NodeType::START);
-  Node End(INT32_MAX, NodeType::END);
-  addNode(Start);
-  addNode(End);
-  for (auto NNop  : NNoParents)  addEdge(Start, NNop);
-  for (auto NNoch : NNoChildren) addEdge(NNoch, End);
+  Node StartNew(0, NodeType::START);
+  Node EndNew(INT32_MAX, NodeType::END);
+  addNode(StartNew);
+  addNode(EndNew);
+  for (auto NNop  : NNoParents)  addEdge(StartNew, NNop);
+  for (auto NNoch : NNoChildren) addEdge(NNoch, EndNew);
+
+  Start = std::make_unique<Node>(StartNew);
+  End   = std::make_unique<Node>(EndNew);
 
   return true;
 }
@@ -98,6 +102,9 @@ bool Graph::addEdge(const Node &From, const Node &To) {
   Successors_[From].push_back(To);
   Predecessors_[To].push_back(From);
   return true;
+}
+bool Graph::acyclic() const {
+  if (empty()) return true;
 }
 
 bool Graph::exists(const Node &N) const {

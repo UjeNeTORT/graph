@@ -3,7 +3,7 @@
 #include <iostream>
 #include <optional>
 #include <ostream>
-#include <set>
+#include <memory>
 #include <span>
 #include <vector>
 #include <unordered_map>
@@ -17,6 +17,8 @@ class Graph final {
   using AdjList_t = std::unordered_map<Node, std::vector<Node>>;
   AdjList_t Successors_;
   AdjList_t Predecessors_;
+  std::unique_ptr<Node> Start;
+  std::unique_ptr<Node> End;
   std::string Name_;
 public:
   Graph(std::string Name = "UjeNeGraph") : Name_(Name) {}
@@ -37,14 +39,15 @@ public:
   //          'false' if it already existed
   bool addEdge(const Node &From, const Node &To);
 
+  // check if no cycles exist
+  bool acyclic() const;
+
   bool exists(const Node &N) const;
   bool empty() const;
   bool connected(const Node &N1, const Node &N2);
 
   void print(std::ostream &OS) const;
 };
-
-// bool Acyclic(const Graph &G);
 
 void input(std::istream &IS, Graph &G);
 
