@@ -54,9 +54,9 @@ bool Graph::addStartEnd() {
 
   if (is_empty) addEdge(StartNew, EndNew);
 
-  Start_ = std::make_unique<Node>(Successors_.find(StartNew)->first);
+  Start_ = &Successors_.find(StartNew)->first;
   if (HasEnd)
-    End_ = std::make_unique<Node>(Successors_.find(EndNew)->first);
+    End_ = &Successors_.find(EndNew)->first;
 
   return true;
 }
@@ -83,6 +83,34 @@ const std::string &Graph::getName() const {
 
 bool Graph::hasStart() const { return Start_ != nullptr; }
 bool Graph::hasEnd() const { return End_ != nullptr; }
+const Node *Graph::getStart() const {
+  return Start_;
+}
+
+const Node *Graph::getEnd() const {
+  return End_;
+}
+
+bool Graph::setStart(const Node &Start) {
+  for (auto &S : Successors_) {
+    if (S.first == Start) {
+      Start_ = &S.first;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool Graph::setEnd(const Node &End) {
+  for (auto &S : Successors_) {
+    if (S.first == End) {
+      End_ = &S.first;
+      return true;
+    }
+  }
+  return false;
+}
 
 bool Graph::addNode(Node N) {
   if (exists(N)) return false;
@@ -143,7 +171,7 @@ bool Graph::acyclic() {
   for (auto It = Nodes.begin(); It != Nodes.end(); ++It)
     Colors[**It] = WHITE;
 
-  Visiting.push_back(*Start_.get());
+  Visiting.push_back(*Start_);
   while (!Visiting.empty()) {
     Node Curr = Visiting.back();
 
@@ -231,58 +259,58 @@ void Graph::print(std::ostream &OS) const {
   }
 }
 
-std::optional<Graph> Graph::getDom(Node *Start) {
-  if (Start == nullptr) Start = Start_.get();
-  if (Start == nullptr) return std::nullopt;
+std::optional<Graph> Graph::getDom() {
+  Node Start = *getStart();
 
   std::vector<Node> Nodes;
-  for (const auto &[N, Ch] : Successors_)
-    Nodes.push_back(N);
+  for (const auto &S : Successors_)
+    Nodes.push_back(S.first);
 
   std::unordered_map<Node, std::set<Node>> Dom;
   for (auto N : Nodes) {
-    if (N == *Start) Dom[N].insert(N);
-    else Dom[N].insert(Nodes.begin(), Nodes.end());
+    if (N == Start) Dom[N] = {N};
+    else Dom[N] = std::set<Node>(Nodes.begin(), Nodes.end());
   }
 
-  bool changed = true;
-  std::set<Node> WorkList = {*Start};
-  while(!WorkList.empty() && changed) {
+  std::set<Node> WorkList;
+  for (const auto &N : Nodes)
+    if (N != Start) WorkList.insert(N);
+
+  while(!WorkList.empty()) {
     Node N = *WorkList.begin();
-    WorkList.erase(std::find(WorkList.begin(), WorkList.end(), N));
+    WorkList.erase(N);
+
+    if (Predecessors_[N].empty()) continue;
 
     // NewDom = {N}
-    std::set<Node> NewDom;
+    std::set<Node> NewDom = Dom[Predecessors_[N][0]];
 
-    if (!Predecessors_[N].empty()) {
-      changed = false;
-      auto &FirstPred = Predecessors_[N][0];
-      NewDom.insert(Dom[FirstPred].begin(), Dom[FirstPred].end());
+    for (const Node &P : Predecessors_[N]) {
+      std::set<Node> Temp;
+      std::set_intersection(
+        NewDom.begin(), NewDom.end(),
+        Dom[P].begin(), Dom[P].end(),
+        std::inserter(Temp, Temp.begin())
+      );
+      NewDom.swap(Temp);
+    }
+    NewDom.insert(N);
 
-      for (const Node &P : Predecessors_[N]) {
-        std::set<Node> Temp;
-        std::set_intersection(
-          NewDom.begin(), NewDom.end(),
-          Dom[P].begin(), Dom[P].end(),
-          std::inserter(Temp, Temp.begin())
-        );
-        NewDom = Temp;
-      }
-      NewDom.insert(N);
-
-      if (Dom[N] != NewDom) {
-        Dom[N] = NewDom;
-        changed = true;
+    if (Dom[N] != NewDom) {
+      Dom[N].swap(NewDom);
+      auto SIt = Successors_.find(N);
+      if (SIt != Successors_.end()) {
+        for (const Node &S : SIt->second) {
+          if (S != Start) WorkList.insert(S);
+        }
       }
     }
-
-    for (const Node &S : Successors_[N]) WorkList.insert(S);
   }
 
   std::unordered_map<Node, std::set<Node>> iDom;
 
   for (auto N : Nodes) {
-    if (N == *Start) continue;
+    if (N == Start) continue;
     for (auto D1 : Dom[N]) {
       if (D1 == N) continue;
       bool IsImm = true;
@@ -307,6 +335,23 @@ std::optional<Graph> Graph::getDom(Node *Start) {
   }
 
   return DomTree;
+}
+
+std::optional<Graph> Graph::getPDom() {
+  Graph InvG;
+
+  for (auto &[N1, Ch] : Successors_) {
+    InvG.addNode(N1);
+    if (N1.getTy() == NodeType::START) InvG.setEnd(N1);
+    if (N1.getTy() == NodeType::END) InvG.setStart(N1);
+    for (auto &N2 : Ch) {
+      InvG.addNode(N2);
+      InvG.addEdge(N2, N1);
+    }
+  }
+
+  assert(InvG.getEnd() && "Inversed Graph must have END");
+  return InvG.getDom();
 }
 
 void input(std::istream &IS, Graph &G) {
