@@ -40,12 +40,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Acyclic: " << IsAcyclic << "\n";
     return 0;
   }
-  if (!IsAcyclic) {
-    std::cout << "Error: provided graph is not acyclic!\n";
-    return 1;
-  }
 
   if (Result.count("rpo")) {
+    if (!IsAcyclic) {
+      std::cout << "Error: provided graph is not acyclic!\n";
+      return 1;
+    }
     auto RPO = G.traverseRPO();
     std::cout << "Reverse Post Order:\n";
     for (auto It = RPO.begin(); It != RPO.end(); ++It) std::cout << *It << ' ';
@@ -53,8 +53,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (Result.count("dom")) {
-    auto Dom = getDom(G);
-    std::cerr << "Dominator tree:\n" << Dom << "\n";
+    ujene::Graph DomTree = G.getDom().value();
+    std::cerr << "Dominator tree:\n" << DomTree  << "\n";
+    std::ofstream OFDomGraph(DomFname);
+    ujene::printDot(OFDomGraph, DomTree);
   }
 
   std::cerr << G;

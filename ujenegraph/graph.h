@@ -29,6 +29,9 @@ public:
 
   const std::string &getName() const;
 
+  bool hasStart() const;
+  bool hasEnd() const;
+
   // @returns 'true' if the node was actually inserted
   //          'false' if it already existed
   bool addNode(Node N);
@@ -42,6 +45,7 @@ public:
   // check if no cycles exist
   bool acyclic();
   std::vector<Node> traverseRPO();
+  std::optional<Graph> getDom();
 
   bool exists(const Node &N) const;
   bool empty() const;

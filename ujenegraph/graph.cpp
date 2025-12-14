@@ -3,13 +3,16 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <span>
 #include <sstream>
-#include <stack>
+#include <set>
 #include <unordered_map>
+#include <valarray>
 #include <vector>
 
 namespace {
@@ -37,20 +40,23 @@ bool Graph::addStartEnd() {
   for (auto [N, Pr] : Predecessors_)
     if (Pr.empty()) NNoParents.push_back(N);
 
-  // failed to choose Start/End node, which means cycles were detected
-  if (!empty() && (NNoParents.empty() || NNoChildren.empty())) return false;
+  // failed to choose Start node, which means cycles were detected
+  if (!empty() && NNoParents.empty()) return false;
+  bool HasEnd = !NNoChildren.empty();
 
   Node StartNew(0, NodeType::START);
   Node EndNew(INT32_MAX, NodeType::END);
   addNode(StartNew);
-  addNode(EndNew);
+  if (HasEnd) addNode(EndNew);
   for (auto NNop  : NNoParents)  addEdge(StartNew, NNop);
-  for (auto NNoch : NNoChildren) addEdge(NNoch, EndNew);
+  if (HasEnd)
+    for (auto NNoch : NNoChildren) addEdge(NNoch, EndNew);
 
   if (is_empty) addEdge(StartNew, EndNew);
 
   Start = std::make_unique<Node>(Successors_.find(StartNew)->first);
-  End   = std::make_unique<Node>(Successors_.find(EndNew)->first);
+  if (HasEnd)
+    End = std::make_unique<Node>(Successors_.find(EndNew)->first);
 
   return true;
 }
@@ -74,6 +80,9 @@ std::optional<std::span<const Node>> Graph::getParents(const Node &N) const {
 const std::string &Graph::getName() const {
   return Name_;
 }
+
+bool Graph::hasStart() const { return Start != nullptr; }
+bool Graph::hasEnd() const { return End != nullptr; }
 
 bool Graph::addNode(Node N) {
   if (exists(N)) return false;
@@ -220,6 +229,83 @@ void Graph::print(std::ostream &OS) const {
       OS << " " << N;
     OS << '\n';
   }
+}
+
+std::optional<Graph> Graph::getDom() {
+  if (!hasStart()) return std::nullopt;
+
+  std::vector<Node> Nodes;
+  for (const auto &[N, Ch] : Successors_)
+    Nodes.push_back(N);
+
+  std::unordered_map<Node, std::set<Node>> Dom;
+  for (auto N : Nodes) {
+    if (N == *Start) Dom[N].insert(N);
+    else Dom[N].insert(Nodes.begin(), Nodes.end());
+  }
+
+  bool changed = true;
+  std::set<Node> WorkList = {*Start};
+  while(!WorkList.empty() && changed) {
+    Node N = *WorkList.begin();
+    WorkList.erase(std::find(WorkList.begin(), WorkList.end(), N));
+
+    // NewDom = {N}
+    std::set<Node> NewDom;
+
+    if (!Predecessors_[N].empty()) {
+      changed = false;
+      auto &FirstPred = Predecessors_[N][0];
+      NewDom.insert(Dom[FirstPred].begin(), Dom[FirstPred].end());
+
+      for (const Node &P : Predecessors_[N]) {
+        std::set<Node> Temp;
+        std::set_intersection(
+          NewDom.begin(), NewDom.end(),
+          Dom[P].begin(), Dom[P].end(),
+          std::inserter(Temp, Temp.begin())
+        );
+        NewDom = Temp;
+      }
+      NewDom.insert(N);
+
+      if (Dom[N] != NewDom) {
+        Dom[N] = NewDom;
+        changed = true;
+      }
+    }
+
+    for (const Node &S : Successors_[N]) WorkList.insert(S);
+  }
+
+  std::unordered_map<Node, std::set<Node>> iDom;
+
+  for (auto N : Nodes) {
+    if (N == *Start) continue;
+    for (auto D1 : Dom[N]) {
+      if (D1 == N) continue;
+      bool IsImm = true;
+      for (auto D2 : Dom[N]) {
+        if (D2 == N || D2 == D1) continue;
+        if (Dom[D2].count(D1)) {
+          IsImm = false;
+          break;
+        }
+      }
+      if (IsImm) {
+        iDom[N].insert(D1);
+        break;
+      }
+    }
+  }
+
+  Graph DomTree;
+  for (auto &[N1, D] : iDom) {
+    DomTree.addNode(N1);
+    for (auto &N2 : D) DomTree.addEdge(N2, N1);
+  }
+
+  return DomTree;
 }
 
 void input(std::istream &IS, Graph &G) {
