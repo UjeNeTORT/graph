@@ -14,12 +14,10 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_library(GTEST_LIBRARY NAMES gtest gtest_main)
 
-add_subdirectory(CXXGraph)
 add_subdirectory(cxxopts)
 add_subdirectory(ujenegraph)
 
 add_executable(graph main.cpp)
-target_link_libraries(graph PRIVATE ujenegraph CXXGraph)
+target_link_libraries(graph PRIVATE ujenegraph)
 target_include_directories(graph PRIVATE ${CMAKE_SOURCE_DIR}/ujenegraph
-                                         ${CMAKE_SOURCE_DIR}/cxxopts/include
-                                         ${CMAKE_SOURCE_DIR}/CXXGraph/include)
+                                         ${CMAKE_SOURCE_DIR}/cxxopts/include)
