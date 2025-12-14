@@ -5,7 +5,7 @@ A library with basic graph algorithm implementation:
 - graph cycles check
 - topologic sort
 - Dominator tree build
-- Posdominator tree build
+- Postdominator tree build
 
 ## Install and build
 

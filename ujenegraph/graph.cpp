@@ -3,16 +3,13 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
 #include <iostream>
 #include <iterator>
-#include <memory>
 #include <optional>
 #include <span>
 #include <sstream>
 #include <set>
 #include <unordered_map>
-#include <valarray>
 #include <vector>
 
 namespace {
