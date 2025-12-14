@@ -1,30 +1,45 @@
-#include <cstdint>
+#include <fstream>
 #include <iostream>
 
-#include "CXXGraph/CXXGraph.hpp"
 #include "graph.h"
+#include "cxxopts.hpp"
 
-namespace cxxg = CXXGraph;
 namespace ujene = UjeNeGraph;
 
-int main() {
-  cxxg::Graph<uint32_t> g;
-  ujene::Graph G;
-  G.addNode(3);
-  G.addNode(5);
-  G.addNode(7);
-  G.addNode(9);
-  G.addNode(9);
+int main(int argc, char *argv[]) {
+  std::string RPOFname;
+  std::string DomFname;
+  std::string PostDomFname;
+  cxxopts::Options Options("graph", "Algorithms on graphs");
 
-  G.addEdge(3, 5);
-  G.addEdge(3, 7);
-  G.addEdge(3, 2);
-  G.addEdge(3, 2);
-  G.addEdge(5, 7);
-  G.addEdge(7, 9);
+  Options.add_options()
+  ("h,help", "print help message")
+  ("acyclic", "print 1 if graph is acyclic, 0 otherwise")
+  ("rpo", "print rpo sorted graph",
+    cxxopts::value<std::string>(RPOFname)->default_value("rpo.dot"))
+  ("dom", "print dominator tree",
+    cxxopts::value<std::string>(DomFname)->default_value("dom.dot"))
+  ("postdom", "print post dominator tree",
+    cxxopts::value<std::string>(PostDomFname)->default_value("postdom.dot"))
+  ;
+
+  auto Result = Options.parse(argc, argv);
+  if (Result.count("h") || Result.count("help") || Result.arguments().empty()) {
+    std::cout << Options.help() << "\n";
+    return 0;
+  }
+
+  ujene::Graph G;
+
+  ujene::input(std::cin, G);
+
+  if (Result.count("acyclic")) {
+    G.addStartEnd(); // temporary
+  }
 
   std::cout << G;
-  ujene::printDot(std::cout, G);
+  std::ofstream OFs_dom_dot(DomFname);
+  ujene::printDot(OFs_dom_dot, G);
 
   return 0;
 }
