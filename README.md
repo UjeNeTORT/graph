@@ -1,7 +1,7 @@
 # UjeNeGraph
 ---
 
-A library with basic graph algorithm implementation:
+A library with basic graph algorithm implementations:
 - graph cycles check
 - topologic sort
 - Dominator tree build
@@ -29,6 +29,15 @@ build/bin/graph --rpo < examples/2.graph
 build/bin/graph --dom < examples/3.graph
 build/bin/graph --postdom < examples/4.graph
 ```
+> [!NOTE]
+> Some algorithms may not run due to ambiguity of provided graphs:
+> `Start` and `End` nodes are only attached to nodes without parents or children,
+> so if graph fails to find such nodes, it will not insert `Start` and `End`.
+>
+> Some algorithms depend on presence of nodes marked as `Start` or `End`.
+>
+> To resolve this, manually modify your graphs i.e. attach nodes without parents or
+> children to explicitly mark them as entry or exit points.
 
 4. Generate graphs images (graphviz required)
 ```bash
