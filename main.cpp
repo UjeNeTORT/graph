@@ -54,18 +54,31 @@ int main(int argc, char *argv[]) {
   }
 
   if (Result.count("dom")) {
-    ujene::Graph DomTree = G.getDom().value();
-    std::cerr << "Dominator tree:\n" << DomTree  << "\n";
-    std::ofstream OFDomGraph(DomFname);
-    ujene::printDot(OFDomGraph, DomTree);
+    if (!G.getStart()) {
+      std::cout << "Error: start node required for dominator tree!\n";
+      std::cout << "Could not insert start node by default because\n"
+                   " the provided graph does not have nodes w/o parents\n";
+    } else {
+      assert(G.getStart() && "Start node required");
+      ujene::Graph DomTree = G.getDom().value();
+      std::cerr << "Dominator tree:\n" << DomTree  << "\n";
+      std::ofstream OFDomGraph(DomFname);
+      ujene::printDot(OFDomGraph, DomTree);
+    }
   }
 
   if (Result.count("postdom")) {
-    assert(G.getEnd() && "End node required");
-    ujene::Graph PDomTree = G.getPDom().value();
-    std::cerr << "Post Dominator tree:\n" << PDomTree  << "\n";
-    std::ofstream OFPostDomGraph(PostDomFname);
-    ujene::printDot(OFPostDomGraph, PDomTree);
+    if (!G.getEnd()) {
+      std::cout << "Error: end node required for post dominator tree!\n";
+      std::cout << "Could not insert end node by default because\n"
+                   " the provided graph does not have nodes w/o children\n";
+    } else {
+      assert(G.getEnd() && "End node required");
+      ujene::Graph PDomTree = G.getPDom().value();
+      std::cerr << "Post Dominator tree:\n" << PDomTree  << "\n";
+      std::ofstream OFPostDomGraph(PostDomFname);
+      ujene::printDot(OFPostDomGraph, PDomTree);
+    }
   }
 
   std::cerr << G;
