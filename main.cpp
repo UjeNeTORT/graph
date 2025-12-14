@@ -30,11 +30,12 @@ int main(int argc, char *argv[]) {
   }
 
   ujene::Graph G;
-
+  std::cout << "Enter the graph: (to stop press Ctrl-D)\n";
   ujene::input(std::cin, G);
+  bool StartEndExist = G.addStartEnd();
 
   if (Result.count("acyclic")) {
-    G.addStartEnd(); // temporary
+    std::cout << "Acyclic: " << (StartEndExist && G.acyclic()) << "\n";
   }
 
   std::cout << G;

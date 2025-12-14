@@ -8,6 +8,9 @@
 #include <optional>
 #include <span>
 #include <sstream>
+#include <stack>
+#include <unordered_map>
+#include <vector>
 
 namespace {
   void printDotEdge(std::ostream &OS,
@@ -19,6 +22,8 @@ namespace {
 namespace UjeNeGraph {
 
 bool Graph::addStartEnd() {
+  bool is_empty = empty();
+
   std::vector<Node> NNoParents;
   std::vector<Node> NNoChildren;
 
@@ -28,9 +33,12 @@ bool Graph::addStartEnd() {
 
   // find nodes w/o children and parents, ignoring Start and End
   for (auto [N, Ch] : Successors_)
-    if (Ch.empty() || Ch[0] == N) NNoChildren.push_back(N);
+    if (Ch.empty()) NNoChildren.push_back(N);
   for (auto [N, Pr] : Predecessors_)
-    if (Pr.empty() || Pr[0] == N) NNoParents.push_back(N);
+    if (Pr.empty()) NNoParents.push_back(N);
+
+  // failed to choose Start/End node, which means cycles were detected
+  if (!empty() && (NNoParents.empty() || NNoChildren.empty())) return false;
 
   Node StartNew(0, NodeType::START);
   Node EndNew(INT32_MAX, NodeType::END);
@@ -39,8 +47,10 @@ bool Graph::addStartEnd() {
   for (auto NNop  : NNoParents)  addEdge(StartNew, NNop);
   for (auto NNoch : NNoChildren) addEdge(NNoch, EndNew);
 
-  Start = std::make_unique<Node>(StartNew);
-  End   = std::make_unique<Node>(EndNew);
+  if (is_empty) addEdge(StartNew, EndNew);
+
+  Start = std::make_unique<Node>(Successors_.find(StartNew)->first);
+  End   = std::make_unique<Node>(Successors_.find(EndNew)->first);
 
   return true;
 }
@@ -103,8 +113,47 @@ bool Graph::addEdge(const Node &From, const Node &To) {
   Predecessors_[To].push_back(From);
   return true;
 }
-bool Graph::acyclic() const {
-  if (empty()) return true;
+
+bool Graph::acyclic() {
+  // assert(Start != nullptr && "Graph must have a node marked as START");
+  // assert(End != nullptr && "Graph must have a node marked as END");
+  if (Start == nullptr || End == nullptr) return false;
+
+  // only start and end nodes
+  if (Successors_.size() == 2) return true;
+
+  std::vector<const Node *> Nodes;
+  for (const auto &[N, Ch] : Successors_)
+    Nodes.push_back(&N);
+
+  // stack where white nodes wait to get checked
+  std::vector<Node> Visiting;
+
+  enum COLOR { WHITE = 0, GREY = 1, BLACK = 2};
+  std::unordered_map<Node, COLOR> Colors;
+  for (auto It = Nodes.begin(); It != Nodes.end(); ++It)
+    Colors[**It] = WHITE;
+
+  Visiting.push_back(*Start.get());
+  while (!Visiting.empty()) {
+    Node Curr = Visiting.back();
+
+    assert(Colors.find(Curr) != Colors.end());
+    if (Colors[Curr] != GREY) {
+      Colors[Curr] = GREY;
+
+      assert(getChildren(Curr) != std::nullopt);
+
+      for (const Node &Ch : Successors_[Curr]) {
+        if      (Colors[Ch] == WHITE) Visiting.push_back(Ch);
+        else if (Colors[Ch] == GREY)  return false; // found cycle
+      }
+    } else if (Colors[Curr] == GREY) {
+      Visiting.pop_back();
+      Colors[Curr] = BLACK;
+    }
+  }
+  return true;
 }
 
 bool Graph::exists(const Node &N) const {

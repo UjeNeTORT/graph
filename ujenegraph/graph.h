@@ -17,8 +17,8 @@ class Graph final {
   using AdjList_t = std::unordered_map<Node, std::vector<Node>>;
   AdjList_t Successors_;
   AdjList_t Predecessors_;
-  std::unique_ptr<Node> Start;
-  std::unique_ptr<Node> End;
+  std::unique_ptr<Node> Start = nullptr;
+  std::unique_ptr<Node> End = nullptr;
   std::string Name_;
 public:
   Graph(std::string Name = "UjeNeGraph") : Name_(Name) {}
@@ -40,7 +40,7 @@ public:
   bool addEdge(const Node &From, const Node &To);
 
   // check if no cycles exist
-  bool acyclic() const;
+  bool acyclic();
 
   bool exists(const Node &N) const;
   bool empty() const;
