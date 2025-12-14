@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     } else {
       assert(G.getStart() && "Start node required");
       ujene::Graph DomTree = G.getDom().value();
-      std::cerr << "Dominator tree:\n" << DomTree  << "\n";
+      // std::cerr << "Dominator tree:\n" << DomTree  << "\n";
       std::ofstream OFDomGraph(DomFname);
       ujene::printDot(OFDomGraph, DomTree);
     }
@@ -75,13 +75,13 @@ int main(int argc, char *argv[]) {
     } else {
       assert(G.getEnd() && "End node required");
       ujene::Graph PDomTree = G.getPDom().value();
-      std::cerr << "Post Dominator tree:\n" << PDomTree  << "\n";
+      // std::cerr << "Post Dominator tree:\n" << PDomTree  << "\n";
       std::ofstream OFPostDomGraph(PostDomFname);
       ujene::printDot(OFPostDomGraph, PDomTree);
     }
   }
 
-  std::cerr << G;
+  // std::cerr << G;
   if (Result.count("dot")) {
     std::ofstream OFDotGraph(DotFname);
     ujene::printDot(OFDotGraph, G);
